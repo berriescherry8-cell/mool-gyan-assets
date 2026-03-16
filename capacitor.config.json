@@ -1,0 +1,27 @@
+{
+  "appId": "com.moolgyan.app",
+  "appName": "Mool Gyan",
+  "webDir": "public",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "backgroundColor": "#000000",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "dark",
+      "backgroundColor": "#000000"
+    }
+  },
+  "android": {
+    "buildOptions": {
+      "releaseType": "APK"
+    },
+    "allowMixedContent": true
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

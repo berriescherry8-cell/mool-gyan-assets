@@ -1,0 +1,7 @@
+{
+  "/satguru-bhajan/page": "app/satguru-bhajan/page.js",
+  "/live-satsang/page": "app/live-satsang/page.js",
+  "/satsang/page": "app/satsang/page.js",
+  "/admin/live-satsang/page": "app/admin/live-satsang/page.js",
+  "/admin/tools/storage-browser/page": "app/admin/tools/storage-browser/page.js"
+}

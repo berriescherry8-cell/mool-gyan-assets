@@ -1,0 +1,1 @@
+This folder contains the configuration for the Mool Gyan Android App.

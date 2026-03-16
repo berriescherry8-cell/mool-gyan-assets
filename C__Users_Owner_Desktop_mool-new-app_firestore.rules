@@ -1,0 +1,80 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'sharmadevendra715@gmail.com';
+    }
+
+    function isString(str, min, max) {
+      return str is string && str.size() >= min && str.size() <= max;
+    }
+
+    function isEmail(email) {
+      return email is string && email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,4}$');
+    }
+
+    match /books/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /newsArticles/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /satsangVideos/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /spiritualPhotos/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /saarSangrahPhotos/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /referenceDocuments/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /appSettings/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /satguruBhajans/{docId} { allow read: if true; allow write: if isAdmin(); }
+    
+    // FCM tokens can be created by any user/device to subscribe to notifications.
+    // Only admins can read or manage the list of tokens.
+    match /fcmTokens/{token} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /faqSubmissions/{submissionId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isString(request.resource.data.name, 2, 50) &&
+                       isEmail(request.resource.data.email) &&
+                       isString(request.resource.data.question, 10, 1000);
+    }
+
+    match /deekshaSubmissions/{submissionId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isString(request.resource.data.name, 2, 50) &&
+                       request.resource.data.mobile.matches('^\\d{10}$') &&
+                       (request.resource.data.email == null || request.resource.data.email == '' || isEmail(request.resource.data.email)) &&
+                       request.resource.data.pincode.matches('^\\d{6}$') &&
+                       request.resource.data.deekshaType in ['pratham', 'dvitiya'];
+    }
+
+    match /feedbacks/{feedbackId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isString(request.resource.data.name, 2, 50) &&
+                       isEmail(request.resource.data.email) &&
+                       isString(request.resource.data.message, 10, 2000);
+    }
+
+    match /kgfMembers/{memberId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if isString(request.resource.data.name, 2, 50) &&
+                       isString(request.resource.data.fathersName, 2, 50) &&
+                       request.resource.data.mobile.matches('^\\d{10}$') &&
+                       isEmail(request.resource.data.email);
+    }
+
+    match /orders/{orderId} {
+       allow read, delete: if isAdmin();
+       allow update: if isAdmin();
+      allow create: if isString(request.resource.data.name, 2, 100) &&
+                       request.resource.data.mobile.matches('^\\d{10}$') &&
+                       isString(request.resource.data.address, 10, 250) &&
+                       request.resource.data.pincode.matches('^\\d{6}$') &&
+                       request.resource.data.bookTitle is string &&
+                       request.resource.data.quantity is number &&
+                       request.resource.data.quantity >= 10 &&
+                       request.resource.data.quantity <= 2000 &&
+                       request.resource.data.status == 'pending';
+    }
+  }
+}
