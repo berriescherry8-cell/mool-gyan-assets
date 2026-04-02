@@ -17,7 +17,7 @@ A spiritual content management app built with Next.js and Capacitor for Android 
 - **Frontend**: Next.js 14, React 18, TypeScript
 - **UI**: Radix UI, Tailwind CSS
 - **State Management**: React Context API
-- **Storage**: GitHub API (replaces Firebase/Supabase)
+- **Storage**: Supabase
 - **Mobile**: Capacitor for Android APK builds
 - **Build Tools**: Vite, PostCSS, Autoprefixer
 
@@ -51,21 +51,22 @@ A spiritual content management app built with Next.js and Capacitor for Android 
 
    Edit `.env.local`:
    ```env
-   # GitHub Storage Configuration
-   NEXT_PUBLIC_GITHUB_TOKEN=your_github_token_here
-   NEXT_PUBLIC_GITHUB_REPO=your-username/your-repo-name
-   NEXT_PUBLIC_GITHUB_BRANCH=main
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url_here
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key_here
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
    
    # App Configuration
    NEXT_PUBLIC_APP_NAME="Mool Gyan"
    NEXT_PUBLIC_APP_VERSION="5.0.0"
    ```
 
-4. **Generate GitHub Token**
+4. **Set up Supabase**
    
-   - Go to GitHub Settings → Developer settings → Personal access tokens
-   - Generate new token with `repo` permissions
-   - Copy the token to your `.env.local` file
+   - Create a Supabase project at [supabase.com](https://supabase.com)
+   - Set up authentication and storage buckets
+   - Configure tables for books, photos, videos, news, etc.
+   - Copy the project URL and API keys to your `.env.local` file
 
 5. **Start development server**
    ```bash
@@ -115,48 +116,59 @@ npm run cap:run:android
 npm run cap:open:android
 ```
 
-## GitHub Storage Setup
+## Supabase Setup
 
-This app uses GitHub as storage instead of Firebase/Supabase to avoid costs.
+This app uses Supabase for authentication, database, and storage.
 
-### Repository Structure
+### Database Tables
 
-Your GitHub repository should have this structure:
-```
-your-repo/
-├── spiritual-photos/
-├── satsang-videos/
-├── book-store/
-├── news/
-└── assets/
-```
+Create these tables in your Supabase dashboard:
 
-### Permissions
+1. **books** - Store book information
+2. **photos** - Store photo metadata
+3. **videos** - Store video information
+4. **news** - Store news articles
+5. **orders** - Store book orders
+6. **wisdom_quotes** - Store inspirational quotes
 
-Ensure your GitHub token has these permissions:
-- `repo` - Full control of private repositories
+### Storage Buckets
+
+Create these storage buckets:
+
+1. **books** - PDF files and book covers
+2. **photos** - Image files
+3. **videos** - Video files
+4. **documents** - Other documents
+
+### Authentication
+
+Set up email authentication in Supabase dashboard:
+- Enable email sign-in
+- Configure email templates
+- Set up admin users
 
 ## Data Management
 
-The app uses localStorage for local data persistence and GitHub API for file storage. All data is synchronized with your GitHub repository.
+The app uses Supabase for data persistence and file storage. All data is synchronized with your Supabase project.
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **GitHub API Rate Limits**
-   - Use a personal access token with sufficient permissions
-   - Consider using a GitHub App for production
+1. **Supabase Connection Issues**
+   - Verify your Supabase URL and API keys
+   - Check Supabase project status
+   - Ensure proper table permissions
 
 2. **Android Build Failures**
    - Ensure Android SDK is properly configured
    - Check Gradle version compatibility
    - Verify Java version (Java 11 recommended)
 
-3. **GitHub Upload Failures**
-   - Check internet connection
-   - Verify repository permissions
-   - Ensure branch exists
+3. **Authentication Failures**
+   - Check Supabase authentication settings
+   - Verify user permissions
+   - Ensure proper API key configuration
 
 ### Development Tips
 
@@ -185,7 +197,7 @@ For support and questions:
 
 ## Notes
 
-- This app is designed to be cost-free by using GitHub storage instead of paid services
-- All user data is stored in your GitHub repository
+- This app uses Supabase for cost-effective storage and authentication
+- All user data is stored in your Supabase project
 - The app works offline with cached data
-- Regular backups are handled automatically through GitHub commits
+- Regular backups are handled automatically through Supabase

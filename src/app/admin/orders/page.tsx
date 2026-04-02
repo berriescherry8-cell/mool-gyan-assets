@@ -33,23 +33,20 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from '@/lib/utils';
-import { dataManager } from '@/lib/data-manager';
+import { supabase } from '@/lib/supabase';
 
 type Order = {
   id: string;
-  bookId: string;
-  bookTitle: string;
-  bookAuthor: string;
-  bookPrice: number;
-  quantity: number;
-  totalAmount: number;
-  customerName: string;
+  order_date: string;
+  status: string;
+  name: string;
   mobile: string;
   address: string;
-  pinCode: string;
-  orderDate: string;
-  status: string;
-  createdAt: string;
+  pincode: string;
+  book_title: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export default function OrdersPage() {
@@ -58,26 +55,93 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    // Load orders from data manager
-    const loadedOrders = dataManager.getCollection<Order>('orders');
-    setOrders(loadedOrders);
+    // Load orders from Supabase
+    fetchOrders();
   }, []);
+
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('order_date', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setOrders(data || []);
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch orders",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Google Sheet link for admin
   const googleSheetUrl = 'https://docs.google.com/spreadsheets/d/1lA2c6iX0r1x0HGJcnPDeDVNBLnU5UDbhpAv8ub7unU8/edit?usp=sharing';
 
+  const handleToggleOrderStatus = async (order: Order) => {
+    setIsProcessing(order.id);
+    const newStatus = order.status === 'completed' ? 'pending' : 'completed';
+    const newStatusVerb = newStatus === 'completed' ? 'Completed' : 'Marked as Pending';
+    const newStatusPast = newStatus === 'completed' ? 'completed' : 'pending';
+
+    try {
+      // Update status in Supabase
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus })
+        .eq('id', order.id);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setOrders(prev => prev.map(o =>
+        o.id === order.id ? { ...o, status: newStatus } : o
+      ));
+      
+      toast({
+        title: `Order ${newStatusVerb}`,
+        description: `Order for ${order.name} has been marked as ${newStatusPast}.`,
+      });
+      setIsProcessing(null);
+    } catch (e: any) {
+      console.error(`Error changing order status to ${newStatus}:`, e);
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: e.message || "Could not update the order. Please try again.",
+      });
+      setIsProcessing(null);
+    }
+  };
+
   const handleDeleteOrder = async (orderId: string) => {
     setIsProcessing(orderId);
     try {
-      // Simulate delete operation
-      setTimeout(() => {
-        setOrders(prev => prev.filter(o => o.id !== orderId));
-        toast({
-          title: 'Order Deleted',
-          description: 'The order has been successfully deleted.',
-        });
-        setIsProcessing(null);
-      }, 500);
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) {
+        throw error;
+      }
+
+      // Update local state
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      toast({
+        title: 'Order Deleted',
+        description: 'The order has been successfully deleted.',
+      });
+      setIsProcessing(null);
     } catch (e: any) {
       console.error("Error deleting order: ", e);
       toast({
@@ -89,35 +153,6 @@ export default function OrdersPage() {
     }
   };
 
-  const handleToggleOrderStatus = async (order: Order) => {
-    setIsProcessing(order.id);
-    const newStatus = order.status === 'completed' ? 'pending' : 'completed';
-    const newStatusVerb = newStatus === 'completed' ? 'Completed' : 'Marked as Pending';
-    const newStatusPast = newStatus === 'completed' ? 'completed' : 'pending';
-
-    try {
-      // Simulate status update
-      setTimeout(() => {
-        setOrders(prev => prev.map(o =>
-          o.id === order.id ? { ...o, status: newStatus } : o
-        ));
-        toast({
-          title: `Order ${newStatusVerb}`,
-          description: `Order for ${order.customerName} has been marked as ${newStatusPast}.`,
-        });
-        setIsProcessing(null);
-      }, 500);
-    } catch (e: any) {
-      console.error(`Error changing order status to ${newStatus}:`, e);
-      toast({
-        variant: "destructive",
-        title: "Update Failed",
-        description: e.message || "Could not update the order. Please try again.",
-      });
-      setIsProcessing(null);
-    }
-  }
-
   const handlePrintReceipt = (order: Order) => {
     const printWindow = window.open('', '', 'height=600,width=800');
     if (printWindow) {
@@ -126,14 +161,14 @@ export default function OrdersPage() {
       printWindow.document.write('</head><body>');
       printWindow.document.write('<div>');
       printWindow.document.write(`<h2>Order Receipt</h2>`);
-      printWindow.document.write(`<p><strong>Order Date:</strong> ${new Date(order.orderDate).toLocaleString()}</p>`);
+      printWindow.document.write(`<p><strong>Order Date:</strong> ${new Date(order.order_date).toLocaleString()}</p>`);
       printWindow.document.write(`<p><strong>Status:</strong> ${order.status}</p>`);
       printWindow.document.write('<h3>Customer Details:</h3>');
-      printWindow.document.write(`<p><strong>Name:</strong> ${order.customerName}</p>`);
+      printWindow.document.write(`<p><strong>Name:</strong> ${order.name}</p>`);
       printWindow.document.write(`<p><strong>Mobile:</strong> ${order.mobile}</p>`);
-      printWindow.document.write(`<p><strong>Address:</strong> ${order.address}, ${order.pinCode}</p>`);
+      printWindow.document.write(`<p><strong>Address:</strong> ${order.address}, ${order.pincode}</p>`);
       printWindow.document.write('<h3>Order Details:</h3>');
-      printWindow.document.write(`<p><strong>Book:</strong> ${order.bookTitle}</p>`);
+      printWindow.document.write(`<p><strong>Book:</strong> ${order.book_title}</p>`);
       printWindow.document.write(`<p><strong>Quantity:</strong> ${order.quantity}</p>`);
       printWindow.document.write('</div>');
       printWindow.document.write('</body></html>');
@@ -153,7 +188,7 @@ export default function OrdersPage() {
       default:
         return 'outline';
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -210,13 +245,13 @@ export default function OrdersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {orders.sort((a,b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()).map((order) => (
+                  {orders.sort((a,b) => new Date(b.order_date).getTime() - new Date(a.order_date).getTime()).map((order) => (
                     <TableRow key={order.id} className={cn(order.status === 'completed' && 'bg-primary/5')}>
-                      <TableCell>{new Date(order.orderDate).toLocaleString()}</TableCell>
-                      <TableCell>{order.customerName}</TableCell>
+                      <TableCell>{new Date(order.order_date).toLocaleString()}</TableCell>
+                      <TableCell>{order.name}</TableCell>
                       <TableCell>{order.mobile}</TableCell>
-                      <TableCell>{`${order.address}, ${order.pinCode}`}</TableCell>
-                      <TableCell>{order.bookTitle}</TableCell>
+                      <TableCell>{`${order.address}, ${order.pincode}`}</TableCell>
+                      <TableCell>{order.book_title}</TableCell>
                       <TableCell>{order.quantity}</TableCell>
                       <TableCell>
                         <Badge variant={getStatusVariant(order.status)} className="capitalize">{order.status}</Badge>
@@ -263,7 +298,7 @@ export default function OrdersPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will permanently delete the order for {order.customerName}. This action cannot be undone.
+                                This will permanently delete the order for {order.name}. This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

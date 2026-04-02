@@ -59,7 +59,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ video }) => {
 
   return (
     <div
-      className="aspect-video w-full bg-zinc-950 rounded-t-2xl relative group cursor-pointer overflow-hidden border-b border-white/5"
+      className="aspect-video w-full bg-black rounded-t-2xl relative group cursor-pointer overflow-hidden border-b border-white/5"
       onClick={() => setIsPlaying(true)}
     >
       {video.thumbnailUrl ? (
@@ -70,26 +70,26 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ video }) => {
           className="object-cover transition-transform duration-[2000ms] group-hover:scale-110 opacity-70"
         />
       ) : (
-        <div className="w-full h-full bg-zinc-900"></div>
+        <div className="w-full h-full bg-black"></div>
       )}
       
-      {/* Celestial Pulse Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-transparent to-primary/10 group-hover:opacity-60 transition-opacity" />
+      {/* Golden Pulse Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-yellow-500/20 to-transparent group-hover:opacity-80 transition-opacity" />
 
-      {/* Artistic Play Button: The Refined Celestial Jewel */}
+      {/* Artistic Play Button: The Golden Celestial Jewel */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative">
-            {/* Pulsing Aura */}
-            <div className="absolute inset-[-15px] bg-primary/20 rounded-full blur-xl animate-heartbeat opacity-40"></div>
+            {/* Golden Pulsing Aura */}
+            <div className="absolute inset-[-15px] bg-yellow-500/30 rounded-full blur-xl animate-heartbeat opacity-60"></div>
             
-            {/* Celestial Orbit Ring */}
-            <div className="absolute inset-[-8px] border border-primary/20 rounded-full animate-spin [animation-duration:15s] opacity-30"></div>
+            {/* Golden Orbit Ring */}
+            <div className="absolute inset-[-8px] border-2 border-yellow-400/60 rounded-full animate-spin [animation-duration:15s] opacity-40"></div>
             
-            {/* The Main Jewel (Refined Size) */}
-            <div className="relative h-10 w-10 bg-zinc-950/60 backdrop-blur-xl rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(234,179,8,0.3)] transform transition-all duration-700 group-hover:scale-110 group-hover:shadow-[0_0_40px_rgba(234,179,8,0.5)] border border-primary/40 group-hover:border-primary active:scale-95">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent"></div>
+            {/* The Main Jewel with Golden Effect */}
+            <div className="relative h-12 w-12 bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-600 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(255,215,0,0.6)] transform transition-all duration-700 group-hover:scale-125 group-hover:shadow-[0_0_60px_rgba(255,215,0,0.8)] border-2 border-yellow-300/80 group-hover:border-yellow-200 active:scale-95">
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-200/30 to-transparent"></div>
                 <svg 
-                    className="h-5 w-5 text-primary ml-0.5 drop-shadow-[0_0_8px_rgba(234,179,8,0.8)] filter brightness-110" 
+                    className="h-6 w-6 text-yellow-900 drop-shadow-[0_0_10px_rgba(255,215,0,0.9)] filter brightness-125" 
                     fill="currentColor" 
                     viewBox="0 0 24 24"
                 >

@@ -13,8 +13,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from '@/components/ui/carousel';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { supabase } from '@/lib/supabase';
 import type { SpiritualPhoto } from '@/lib/types';
 import { Skeleton } from './ui/skeleton';
 import { Flower2 } from 'lucide-react';
@@ -24,12 +23,31 @@ export default function PhotoCarousel() {
     Autoplay({ delay: 3000, stopOnInteraction: true })
   );
 
-  const firestore = useFirestore();
-  const photosCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'spiritualPhotos') : null),
-    [firestore]
-  );
-  const { data: photos, isLoading } = useCollection<SpiritualPhoto>(photosCollection);
+  const [photos, setPhotos] = React.useState<SpiritualPhoto[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetchPhotos();
+  }, []);
+
+  const fetchPhotos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('spiritual_photos')
+        .select('*')
+        .order('upload_date', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setPhotos(data || []);
+    } catch (error) {
+      console.error('Error fetching photos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const validPhotos = photos?.filter(p => p.imageUrl);
 

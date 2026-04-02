@@ -9,7 +9,7 @@ export default function SplashScreen() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setFadeOut(true);
-    }, 2800); // Slightly longer so the image is clearly visible
+    }, 1500); // Reduced from 2800ms to 1500ms to fix stuck loading
 
     return () => clearTimeout(timer);
   }, []);
@@ -20,17 +20,17 @@ export default function SplashScreen() {
         fadeOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >
-      {/* Main splash image – centered and responsive */}
-      <div className="relative w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 mb-6">
+      {/* Main splash image – larger and more prominent */}
+      <div className="relative w-72 h-72 sm:w-80 sm:h-80 md:w-96 md:h-96 mb-4">
         <img
-          src="https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/8fed3dd2327e742d462ae35e2dd29bc2598d3b05/splash.png"
+          src="https://lqymwrhfirszrakuevqm.supabase.co/storage/v1/object/public/moolgyan-media/App_logo_QR/splash.png"
           alt="Mool Gyan Splash"
           className="w-full h-full object-contain drop-shadow-2xl animate-pulse-slow"
         />
       </div>
 
-      {/* App name with subtle animation */}
-      <h1 className="text-4xl sm:text-5xl font-bold font-headline text-primary mb-3 tracking-wide animate-fade-in">
+      {/* App name - smaller and less prominent */}
+      <h1 className="text-2xl sm:text-3xl font-semibold font-headline text-primary mb-2 tracking-wide animate-fade-in">
         Mool Gyan
       </h1>
 

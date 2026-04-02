@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { LocaleProvider } from '@/lib/i18n';
 import AppLayout from '@/components/AppLayout';
-import SplashScreen from '@/components/SplashScreen'; // Yeh sahi path se (components folder mein)
 import { UploadProvider } from '@/context/UploadProvider';
 
 const inter = Inter({
@@ -13,8 +12,8 @@ const inter = Inter({
   variable: '--font-sans',
 });
 
-// Permanent GitHub RAW logo
-const BRAND_LOGO = 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/logos/icon-512.png';
+// User's provided launcher icon
+const BRAND_LOGO = 'https://lqymwrhfirszrakuevqm.supabase.co/storage/v1/object/public/moolgyan-media/App_logo_QR/d110636d-8ff5-4c7d-8964-6934a17c5812-removebg-preview-removebg-preview.png';
 
 export const metadata: Metadata = {
   title: 'Mool Gyan',
@@ -43,6 +42,8 @@ export const viewport: Viewport = {
   themeColor: '#000000',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -62,9 +63,6 @@ export default function RootLayout({
           inter.variable
         )}
       >
-        {/* Splash Screen pehle dikhega */}
-        <SplashScreen />
-
         <LocaleProvider>
           <UploadProvider>
             <AppLayout>

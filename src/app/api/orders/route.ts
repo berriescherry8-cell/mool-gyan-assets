@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { dataManager } from '@/lib/data-manager';
-
-// Simple in-memory storage for server-side rendering
-const serverStorage: Record<string, any[]> = {};
-
-function getServerCollection(collectionName: string): any[] {
-  if (!serverStorage[collectionName]) {
-    serverStorage[collectionName] = [];
-  }
-  return serverStorage[collectionName];
-}
-
-function setServerCollection(collectionName: string, data: any[]): void {
-  serverStorage[collectionName] = data;
-}
+import { supabase } from '@/lib/supabase';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,33 +42,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Add order to data manager or server storage
-    let orderId: string;
-    
-    try {
-      // Try to use data manager (client-side)
-      orderId = dataManager.setDoc('orders', {
-        ...orderData,
-        createdAt: new Date().toISOString(),
-        status: 'pending'
-      });
-    } catch (error) {
-      // Fallback to server storage for server-side rendering
-      const orders = getServerCollection('orders');
-      const newOrder = {
-        ...orderData,
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        status: 'pending'
-      };
-      orders.push(newOrder);
-      setServerCollection('orders', orders);
-      orderId = newOrder.id;
+    // Insert order into Supabase
+    const { data, error } = await supabase
+      .from('orders')
+      .insert({
+        order_date: new Date().toISOString(),
+        status: 'pending',
+        name: orderData.customerName,
+        mobile: orderData.mobile,
+        address: orderData.address,
+        pincode: orderData.pinCode,
+        book_title: orderData.bookTitle,
+        quantity: orderData.quantity
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase insert error:', error);
+      return NextResponse.json(
+        { error: 'Failed to save order' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      orderId: orderId,
+      orderId: data.id,
       message: 'Order saved successfully'
     });
 
@@ -90,6 +76,35 @@ export async function POST(request: NextRequest) {
     console.error('Error saving order:', error);
     return NextResponse.json(
       { error: 'Failed to save order' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET() {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*')
+      .order('order_date', { ascending: false });
+
+    if (error) {
+      console.error('Supabase select error:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch orders' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      orders: data || []
+    });
+
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch orders' },
       { status: 500 }
     );
   }

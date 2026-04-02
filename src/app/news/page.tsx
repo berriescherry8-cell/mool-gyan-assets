@@ -51,7 +51,11 @@ export default function NewsPage() {
                     </DialogTrigger>
                     <DialogContent className="max-w-4xl max-h-[90vh] p-0">
                         <DialogHeader className="p-2 absolute top-2 right-2 z-10">
-                           <DialogClose className="bg-background/50 rounded-full p-1 text-foreground/70 hover:text-foreground/100" />
+                           <DialogClose asChild>
+                             <button className="bg-background/50 rounded-full p-1 text-foreground/70 hover:text-foreground/100">
+                               <span className="sr-only">Close</span>
+                             </button>
+                           </DialogClose>
                         </DialogHeader>
                         {article.imageUrl && (
                           <div className="relative w-full h-[85vh]">

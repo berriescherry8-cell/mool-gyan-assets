@@ -1,26 +1,36 @@
-
-'use client';
+"use client";
 
 import { createContext, useContext, useState, ReactNode } from 'react';
-import { translations, Translation } from './locales';
 
-type Locale = 'en' | 'hi';
+import { translations } from './locales';
 
-interface LocaleContextType {
-  locale: Locale;
-  setLocale: (locale: Locale) => void;
-  t: Translation;
-}
+type Language = 'en' | 'hi';
+type TFunction = (key: string) => string;
 
-const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
+type LocaleContextType = {
+  lang: Language;
+  t: TFunction;
+  setLang: (lang: Language) => void;
+};
+
+const LocaleContext = createContext<LocaleContextType>({} as LocaleContextType);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<Locale>('en');
+  const [lang, setLang] = useState<Language>('en');
 
-  const t = translations[locale];
+  const t: TFunction = (key: string) => {
+    const dict = translations[lang] as Record<string, string>;
+    return dict[key] || key;
+  };
+
+  const value = {
+    lang,
+    t,
+    setLang,
+  };
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t }}>
+    <LocaleContext.Provider value={value}>
       {children}
     </LocaleContext.Provider>
   );
@@ -28,8 +38,5 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
 export function useLocale() {
   const context = useContext(LocaleContext);
-  if (context === undefined) {
-    throw new Error('useLocale must be used within a LocaleProvider');
-  }
   return context;
 }

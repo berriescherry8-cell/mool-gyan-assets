@@ -28,8 +28,10 @@ function BhajanVideoCard({ video }: { video: SatguruBhajan }) {
                 <Collapsible className="w-full">
                   <CollapsibleTrigger asChild>
                     <Button variant="outline" size="sm" className="w-full">
-                        <Music size={16} className="mr-2" />
-                        View Lyrics
+                        <span className="flex items-center">
+                            <Music size={16} className="mr-2" />
+                            View Lyrics
+                        </span>
                     </Button>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -65,14 +67,15 @@ export default function SatguruBhajanPage() {
       
       <div className="space-y-8">
           <div className="mb-8 flex justify-center">
-              <div className="relative w-32 h-32 p-1 rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-yellow-600 shadow-lg">
-                  <div className="w-full h-full bg-background rounded-full p-1 relative overflow-hidden">
+              <div className="relative w-32 h-32 p-1 rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-yellow-600 shadow-lg shadow-yellow-500/30">
+                  <div className="w-full h-full bg-background rounded-full p-1 relative overflow-hidden border-2 border-yellow-300/50">
                       <Image 
-                          src="https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/logos/download.jpg"
+                          src="https://lqymwrhfirszrakuevqm.supabase.co/storage/v1/object/public/moolgyan-media/App_logo_QR/images.jpg"
                           alt="Satguru Bhajan Logo" 
                           fill
                           className="object-cover rounded-full"
                       />
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-200/20 to-transparent"></div>
                   </div>
               </div>
           </div>

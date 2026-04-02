@@ -3,44 +3,18 @@
 
 import { Newspaper } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
-import { cn } from '@/lib/utils';
-
-// Hardcoded news articles (no Firebase)
-const HARDCODED_NEWS = [
-  {
-    id: '1',
-    title: 'सतगुरु श्री नितिनदास जी साहिब का प्रवास कार्यक्रम - दिल्ली',
-    showInTicker: true,
-  },
-  {
-    id: '2',
-    title: 'नई किताब "मूल ज्ञान का प्रकाश" अब उपलब्ध',
-    showInTicker: true,
-  },
-  {
-    id: '3',
-    title: 'सत्संग भजन संग्रह का नया संस्करण जारी',
-    showInTicker: true,
-  },
-];
+import { useCollection } from '@/lib/data-manager';
+import { NewsArticle } from '@/lib/types';
 
 const NewsTicker = () => {
   const [isPaused, setIsPaused] = useState(false);
-  const [articles, setArticles] = useState(HARDCODED_NEWS);
+  const articles = useCollection<NewsArticle>('news');
 
-  // Simulate loading (optional)
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // Could fetch from GitHub RAW here if needed
-    // For now, using hardcoded data
-  }, []);
-
-  if (isLoading || !articles || articles.length === 0) {
-    return null; // Don't show the ticker if there are no articles
+  if (!articles || articles.length === 0) {
+    return null;
   }
 
-  const headlines = articles.filter(a => a.showInTicker).map(article => article.title).filter(Boolean);
+  const headlines = articles.filter(a => a.showInTicker).map(article => article.title || '').filter(Boolean);
   const singlePassContent = headlines.join('  •  ');
   // Repeat content to ensure it's long enough for a smooth marquee effect on all screen sizes
   const repeatedContent = (singlePassContent + '  •  ').repeat(10);

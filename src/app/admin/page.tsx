@@ -1,346 +1,175 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import DataTest from '@/components/DataTest';
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, LogOut, BookOpen, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, Image as ImageIcon, Trash2, AlertCircle, FilePenLine, ExternalLink } from 'lucide-react';
-import type { SpiritualPhoto } from '@/lib/types';
-import Image from 'next/image';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogTrigger, DialogContent } from '@/components/ui/dialog';
-import EditPhotoDialog from '@/components/EditPhotoDialog'; // keep if you have it, or remove
-import { cn } from '@/lib/utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
-import { dataManager, useCollection } from '@/lib/data-manager';
-import { useUpload } from '@/hooks/use-upload';
+import AdminGuard from '@/components/AdminGuard';
 
-const photoSchema = z.object({
-  title: z.string().optional(),
-  description: z.string().optional(),
-  folder: z.string().optional(),
-  photoFile: z.custom<FileList>().refine(files => files && files.length > 0, 'A photo is required.'),
-});
+interface Profile {
+  email: string;
+  role: string;
+  updated_at: string;
+}
 
-type PhotoFormValues = z.infer<typeof photoSchema>;
-
-export default function AdminPhotosirebaPage() {
+export default function AdminDashboard() {
+  const [user, setUser] = useState<{ email: string; role: string } | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
   const { toast } = useToast();
-  const { uploadFile } = useUpload();
-  const [isUploading, setIsUploading] = useState(false);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
-  const [editingPhoto, setEditingPhoto] = useState<SpiritualPhoto | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
-  // Fetch all photos from our data manager
-  const photos = useCollection<SpiritualPhoto>('spiritualPhotos');
+  useEffect(() => {
+    loadUser();
+  }, []);
 
-  // enforce allowed folder names in case someone tries to submit invalid text
-  const allowedFolders = [
-    'general',
-    'Pravas aur Prachar-Prasar',
-    'Saar Sangrah',
-    'Reference',
-  ];
-
-  const form = useForm<PhotoFormValues>({
-    resolver: zodResolver(photoSchema),
-    defaultValues: { title: '', description: '', folder: 'general' },
-  });
-
-  const onSubmit = async (values: PhotoFormValues) => {
-    const photoFile = values.photoFile[0];
-    if (!photoFile) return;
-
-    setIsUploading(true);
-
+  const loadUser = async () => {
     try {
-      // Use our GitHub upload system
-      const photoData = {
-        title: values.title || '',
-        description: values.description || '',
-        folder: values.folder || 'general',
-        uploadDate: new Date().toISOString(),
-      };
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
 
-      await uploadFile<SpiritualPhoto>(
-        'spiritualPhotos',
-        photoData,
-        photoFile,
-        { fieldName: 'imageUrl', path: 'spiritual-photos' }
-      );
+      if (session?.user) {
+        setUser({
+          email: session.user.email!,
+          role: 'admin' // Confirmed by guard
+        });
 
-      toast({ title: 'Photo Uploaded', description: 'Added to gallery successfully.' });
-      form.reset();
-    } catch (error: any) {
-      console.error("Upload failed:", error);
-      toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        setProfile(profileData || null);
+      }
+    } catch (error) {
+      // Silent error handling
     } finally {
-      setIsUploading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleDelete = async (photo: SpiritualPhoto) => {
-    if (!photo.id) return;
+  const handleLogout = async () => {
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
 
-    setIsDeleting(photo.id);
-
-    try {
-      dataManager.deleteDoc('spiritualPhotos', photo.id);
-      toast({ title: 'Photo Deleted', description: 'Removed from gallery.' });
-    } catch (e: any) {
-      console.error("Delete error:", e);
-      toast({ variant: 'destructive', title: 'Deletion Failed', description: e.message });
-    } finally {
-      setIsDeleting(null);
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: error.message,
+      });
+    } else {
+      router.push('/login');
+      router.refresh();
     }
   };
 
-  const handlePhotoUpdated = (updatedPhoto: SpiritualPhoto) => {
-    // Update the photo in our data manager
-    dataManager.setDoc('spiritualPhotos', updatedPhoto, updatedPhoto.id);
-    setEditingPhoto(null);
-  };
-
-  const photosByFolder = useMemo(() => {
-    return photos?.reduce((acc, photo) => {
-      const folder = photo.folder || 'general';
-      if (!acc[folder]) acc[folder] = [];
-      acc[folder].push(photo);
-      return acc;
-    }, {} as Record<string, SpiritualPhoto[]>) || {};
-  }, [photos]);
-
-  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>, onChange: (...event: any[]) => void) => {
-    e.preventDefault();
-    setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onChange(e.dataTransfer.files);
-      e.dataTransfer.clearData();
-    }
-  };
+  if (isLoading) {
+    return (
+      <AdminGuard>
+        <div className="min-h-screen flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AdminGuard>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="font-headline text-3xl flex items-center gap-2">
-            <UploadCloud /> Upload Photo
-          </CardTitle>
-          <CardDescription>Add new images to the photo gallery. Drag & drop or click to select.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="photoFile"
-                render={({ field: { onChange, value, ...rest } }) => (
-                  <FormItem>
-                    <FormLabel>Image File</FormLabel>
-                    <FormControl>
-                      <div
-                        className={cn(
-                          'relative w-full h-48 border-2 border-dashed rounded-lg flex flex-col justify-center items-center text-muted-foreground hover:border-primary/50 cursor-pointer transition-colors',
-                          isDragging && 'border-primary bg-primary/10'
-                        )}
-                        onDragEnter={() => setIsDragging(true)}
-                        onDragLeave={() => setIsDragging(false)}
-                        onDragOver={(e) => e.preventDefault()}
-                        onDrop={(e) => handleFileDrop(e, onChange)}
-                      >
-                        <Input
-                          {...rest}
-                          type="file"
-                          accept="image/*"
-                          onChange={(e) => onChange(e.target.files)}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                        />
-                        {value && value.length > 0 ? (
-                          <div className="text-center">
-                            <ImageIcon className="mx-auto h-10 w-10 text-primary" />
-                            <p className="mt-2 font-semibold">{value[0].name}</p>
-                          </div>
-                        ) : (
-                          <div className="text-center">
-                            <UploadCloud className="mx-auto h-10 w-10" />
-                            <p className="mt-2">Drag & drop or click to select photo</p>
-                          </div>
-                        )}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+    <AdminGuard>
+      <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="text-5xl md:text-6xl font-headline font-bold bg-gradient-to-r from-primary to-yellow-400 bg-clip-text text-transparent mb-4">
+              Admin Dashboard
+            </h1>
+            {user && (
+              <div className="glass-card p-6 rounded-2xl max-w-md mx-auto">
+                <div className="flex items-center space-x-4 mb-2">
+                  <div className="w-12 h-12 bg-gradient-to-r from-primary to-yellow-400 rounded-xl flex items-center justify-center">
+                    <User className="w-6 h-6 text-black" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white text-lg">{user.email}</p>
+                    <p className="text-primary text-sm font-bold uppercase tracking-wider">Admin Role</p>
+                  </div>
+                </div>
+                {profile?.updated_at && (
+                  <p className="text-xs text-white/50">Last updated: {new Date(profile.updated_at).toLocaleDateString()}</p>
                 )}
-              />
-              <FormField control={form.control} name="title" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Title (Optional)</FormLabel>
-                  <FormControl><Input placeholder="Title for the photo" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="description" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
-                  <FormControl><Textarea placeholder="Brief description" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField
-                control={form.control}
-                name="folder"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Folder</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value || 'general'}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select folder" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="general">General Photo Gallery</SelectItem>
-                        <SelectItem value="Pravas aur Prachar-Prasar">Pravas aur Prachar-Prasar</SelectItem>
-                        <SelectItem value="Saar Sangrah">Saar Sangrah</SelectItem>
-                        <SelectItem value="Reference">Reference</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isUploading || form.formState.isSubmitting} className="flex-1">
-                  {isUploading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...</> : 'Add Photo'}
-                </Button>
               </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            )}
+          </div>
 
-      <DataTest />
+          {/* Quick Actions */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="glass-card h-[200px] group hover:border-primary/40 transition-all duration-300 overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle className="text-xl">Books Management</CardTitle>
+                <CardDescription>Manage books, orders, and inventory</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Link href="/admin/books" className="inline-flex items-center text-primary font-semibold hover:underline">
+                  Go to Books →
+                </Link>
+              </CardContent>
+            </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-headline">Manage Photos</CardTitle>
-          <CardDescription>All photos from your GitHub repository. You can edit or delete them here.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!photos && <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}
-          {photos && photos.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {photos.map((photo) => (
-                <Card key={photo.id} className="group relative overflow-hidden">
-                  <Image
-                    src={photo.imageUrl || '/placeholder.png'}
-                    alt={photo.title || 'Photo'}
-                    width={300}
-                    height={300}
-                    className="object-cover aspect-square rounded-t-lg"
-                  />
-                  <div className="p-2">
-                    <p className="font-semibold text-sm truncate">{photo.title || 'Untitled'}</p>
-                    <p className="text-xs text-muted-foreground truncate">{photo.description || '-'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{photo.folder || 'general'}</p>
-                    {photo.imageUrl ? (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 rounded">
-                        Shown
-                      </span>
-                    ) : (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded">
-                        Hidden
-                      </span>
-                    )}
-                  </div>
-                  <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button variant="secondary" size="icon" className="h-7 w-7" onClick={() => setEditingPhoto(photo)}>
-                            <FilePenLine className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>Edit Photo</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="icon" className="h-7 w-7" disabled={isDeleting === photo.id}>
-                                {isDeleting === photo.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Photo?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete "{photo.title || 'this photo'}". Action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(photo)} className="bg-destructive hover:bg-destructive/90">
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </TooltipTrigger>
-                        <TooltipContent>Delete Photo</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : photos && photos.length === 0 && (
-            <div className="text-center py-12">
-              <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-              <h3 className="mt-2 text-lg font-semibold">No Photos Yet</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Upload your first photo using the form above.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <Card className="glass-card h-[200px] group hover:border-primary/40 transition-all duration-300 overflow-hidden">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform mb-4">
+<div className="w-6 h-6 text-white bg-green-500 rounded-full flex items-center justify-center">
+  <Image className="w-4 h-4 text-white" />
+</div>
+                </div>
+                <CardTitle className="text-xl">Notifications</CardTitle>
+                <CardDescription>Send push notifications to users</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <Link href="/admin/notifications" className="inline-flex items-center text-primary font-semibold hover:underline">
+                  Go to Notifications →
+                </Link>
+              </CardContent>
+            </Card>
 
-      {editingPhoto && (
-        <EditPhotoDialog
-          photo={editingPhoto}
-          onOpenChange={(open) => !open && setEditingPhoto(null)}
-          onPhotoUpdated={handlePhotoUpdated}
-        />
-      )}
-    </div>
+            <Card className="glass-card h-[200px]">
+              <CardHeader className="pb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
+                  <span className="text-white font-bold text-lg">+</span>
+                </div>
+                <CardTitle className="text-xl">More Coming Soon</CardTitle>
+                <CardDescription>News, Videos, Orders & more</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0 space-y-2 text-sm">
+                <div>📢 News Management</div>
+                <div>🎥 Video Library</div>
+                <div>📋 Orders Dashboard</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Logout */}
+          <div className="text-center pt-12">
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              size="lg"
+              className="glass-card px-8 py-6 text-lg font-semibold hover:bg-white/10 border-white/20 group"
+            >
+              <LogOut className="mr-2 h-5 w-5 group-hover:-translate-x-1 transition-all duration-300" />
+              Logout Securely
+            </Button>
+          </div>
+        </div>
+      </div>
+    </AdminGuard>
   );
 }

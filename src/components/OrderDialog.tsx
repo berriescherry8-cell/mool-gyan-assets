@@ -53,25 +53,55 @@ export default function OrderDialog({ book, isOpen, onClose }: OrderDialogProps)
       return;
     }
 
-    // Redirect to Google Form with pre-filled data
-    const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSegbq8uEHe7g3-QZB1qZme4h5uOH-DcwlHbmTx5qJeO-F_8tw/viewform?usp=dialog&entry.123456789=${encodeURIComponent(book.title)}&entry.987654321=${encodeURIComponent(form.quantity)}&entry.111222333=${encodeURIComponent(form.fullName)}&entry.444555666=${encodeURIComponent(form.mobile)}&entry.777888999=${encodeURIComponent(form.fullAddress)}&entry.000111222=${encodeURIComponent(form.pinCode)}`;
-    
-    window.open(googleFormUrl, '_blank');
-    
-    toast({
-      title: "Redirecting to Order Form",
-      description: "Please complete your order in the Google Form.",
-    });
-    
-    // Reset form and close dialog
-    setForm({
-      quantity: '10',
-      fullName: '',
-      mobile: '',
-      fullAddress: '',
-      pinCode: '',
-    });
-    onClose();
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookId: book.id,
+          bookTitle: book.title,
+          customerName: form.fullName,
+          mobile: form.mobile,
+          address: form.fullAddress,
+          pinCode: form.pinCode,
+          quantity: Number(form.quantity),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Order Placed Successfully",
+          description: `Your order for ${form.quantity} copies of "${book.title}" has been placed.`,
+        });
+        
+        // Reset form and close dialog
+        setForm({
+          quantity: '10',
+          fullName: '',
+          mobile: '',
+          fullAddress: '',
+          pinCode: '',
+        });
+        onClose();
+      } else {
+        throw new Error(result.error || 'Failed to place order');
+      }
+    } catch (error) {
+      console.error('Error placing order:', error);
+      toast({
+        title: "Error",
+        description: "Failed to place order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

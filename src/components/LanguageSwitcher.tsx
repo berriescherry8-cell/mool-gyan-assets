@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -16,8 +15,8 @@ export default function LanguageSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2">
+      <DropdownMenuTrigger>
+        <Button variant="outline" className="gap-2 flex items-center">
           <span>{locale === 'en' ? 'Language' : 'भाषा'}</span>
           <Languages className="h-[1.2rem] w-[1.2rem]" />
           <span className="sr-only">{t.change_language}</span>

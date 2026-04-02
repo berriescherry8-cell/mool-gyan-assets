@@ -65,6 +65,7 @@ export interface Book {
   pdfUrl?: string;           // optional
   category?: string;
   stockStatus: 'in-stock' | 'out-of-stock' | 'read-only';
+  sequence: number;
   altText?: string;
 }
 
@@ -130,6 +131,16 @@ export interface ReferenceDocument {
   storagePath: string;
 }
 
+export interface ReferenceItem {
+  id: string;
+  title?: string;
+  description?: string;
+  imageUrl?: string;
+  pdfUrl?: string;
+  uploadDate: string;
+  storagePath?: string;
+}
+
 export interface FcmToken {
     id: string;
     subscribedAt: string;
@@ -142,4 +153,75 @@ export interface DailyWisdom {
   authorEn?: string;
   authorHi?: string;
   updatedAt: string;
+}
+
+// Supabase-specific types
+export interface SupabaseNewsArticle {
+  id: string;
+  title: string;
+  content: string;
+  author: string;
+  publication_date?: string;
+  image_url: string;
+  storage_path?: string;
+  show_in_ticker?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseBook {
+  id: string;
+  title: string;
+  author: string;
+  price: number;
+  description: string;
+  cover_url: string;
+  pdf_url?: string;
+  category?: string;
+  stock_status: 'in-stock' | 'out-of-stock' | 'read-only';
+  alt_text?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseOrder {
+  id: string;
+  order_date: string;
+  status: string;
+  name: string;
+  mobile: string;
+  address: string;
+  pincode: string;
+  book_title: string;
+  quantity: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseFeedback {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+}
+
+export interface SupabaseKGFMember {
+  id: string;
+  name: string;
+  fathers_name: string;
+  mobile: string;
+  email: string;
+  joined_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SupabaseDailyWisdom {
+  id: string;
+  text_en: string;
+  text_hi: string;
+  author_en?: string;
+  author_hi?: string;
+  updated_at: string;
 }

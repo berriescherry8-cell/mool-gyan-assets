@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import type { SatsangVideo } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { dataManager } from '@/lib/data-manager';
+import { supabase } from '@/lib/supabase';
 import { useState } from 'react';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
@@ -60,13 +60,19 @@ export default function EditVideoDialog({ video, onOpenChange, onVideoUpdated }:
   const onSubmit = async (values: VideoFormValues) => {
     setIsSubmitting(true);
     try {
-      const updatedData = {
-        id: video.id,
-        title: values.title,
-        description: values.description,
-        isFeatured: values.isFeatured,
-      };
-      await dataManager.setDoc('satsangVideos', updatedData, video.id);
+      const { error } = await supabase
+        .from('satsang_videos')
+        .update({
+          title: values.title,
+          description: values.description,
+          is_featured: values.isFeatured
+        })
+        .eq('id', video.id);
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: 'Video Updated',
         description: `The details for "${values.title}" have been successfully updated.`,
@@ -78,7 +84,7 @@ export default function EditVideoDialog({ video, onOpenChange, onVideoUpdated }:
       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: 'Could not update the video. Please try again.',
+        description: e.message || 'Could not update the video. Please try again.',
       });
     } finally {
       setIsSubmitting(false);

@@ -47,7 +47,7 @@ export default function AppOnboarding() {
       title: t.onboarding_welcome_title || 'Welcome to Mool Gyan',
       description: t.onboarding_welcome_desc || 'Embark on a spiritual journey of self-realization and true knowledge.',
       icon: <Sparkles className="h-12 w-12 text-primary" />,
-      image: "https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/app%20logo%20and%20screenshot/WhatsApp_Image_2025-12-30_at_11.37.03_PM-removebg-preview.png",
+      image: "https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-git/12bf4df5ce312f2559ee02268c32feca19ab89e4/app%20logo%20and%20screenshot/WhatsApp_Image_2025-12-30_at_11.37.03_PM-removebg-preview.png",
       target: null,
       showLangSwitch: true,
     },

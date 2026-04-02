@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -132,6 +133,15 @@ export default function ManageSatguruBhajanPage() {
           <CardDescription>
             Add a bhajan by pasting its YouTube URL and adding other details.
           </CardDescription>
+          <div className="flex justify-center">
+            <Image
+              src="https://lqymwrhfirszrakuevqm.supabase.co/storage/v1/object/public/moolgyan-media/App_logo_QR/images.jpg"
+              alt="Satguru Bhajan Logo"
+              width={100}
+              height={100}
+              className="rounded-full"
+            />
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">

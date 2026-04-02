@@ -1,0 +1,1 @@
+# APK/AAB Build Fix & Capacitor Path&#10;- [x] Create TODO.md&#10;- [ ] Edit src/components/Header.tsx (fix import)&#10;- [ ] Test: npm run build&#10;- [ ] Capacitor sync: npx cap sync android&#10;- [ ] Build APK/AAB: cd android &amp;&amp; gradlew bundleRelease

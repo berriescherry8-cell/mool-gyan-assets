@@ -1,165 +1,148 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ShoppingCart, Expand, Shirt, Notebook } from 'lucide-react';
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { BookOpen, ShoppingCart, Expand, Shirt, Notebook, Loader2, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { createClient } from '@supabase/supabase-js';
 
-// Updated books with your new Supabase URLs
-const books = [
-  {
-    id: '1',
-    title: 'विदेही ज्ञान',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 12,
-    description: 'विदेही ज्ञान की खोज',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/videhi-gyan.jpeg',
-    pdfUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/pdfs/%E0%A4%9C%E0%A5%8D%E0%A4%9E%E0%A4%BE%E0%A4%A8%20%E0%A4%B5%E0%A4%BF%E0%A4%B5%E0%A5%87%E0%A4%A6%E0%A5%80%20pdf.pdf',
-    stockStatus: 'in-stock',
-  },
-  {
-    id: '2',
-    title: 'संतों का सार सन्देश',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 10,
-    description: 'संतों का अनमोल सन्देश',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/snato-ka.jpeg',
-    pdfUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/pdfs/2025_12_08%209_20%20am%20Office%20Lens_compressed%20(1).pdf',
-    stockStatus: 'in-stock',
-  },
-  {
-    id: '3',
-    title: 'हर हर गीता 4th संस्करण',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 6.5,
-    description: 'हर हर गीता घर घर गीता',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/har-geeta%204rth.jpeg',
-    pdfUrl: undefined,
-    stockStatus: 'in-stock',
-  },
-  {
-    id: '4',
-    title: 'हर हर गीता 3rd संस्करण',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 6.5,
-    description: 'हर हर गीता घर घर गीता',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/har-har-geeta-3rd%20.jpeg',
-    pdfUrl: undefined,
-    stockStatus: 'in-stock',
-  },
-  {
-    id: '5',
-    title: 'हर हर गीता 2nd संस्करण',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 6.5,
-    description: 'हर हर गीता घर घर गीता',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/har-geeta-2ndedi%201.jpeg',
-    pdfUrl: undefined,
-    stockStatus: 'in-stock',
-  },
-  {
-    id: '6',
-    title: 'हर हर गीता 1st संस्करण',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 6.5,
-    description: 'हर हर गीता घर घर गीता',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/har-geeta-1nd%201.jpeg',
-    pdfUrl: undefined,
-    stockStatus: 'in-stock',
-  },
-  {
-    id: '7',
-    title: 'सत्यनाम',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 0,
-    description: 'सत्यनाम (केवल पठन हेतु)',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/satya-nam.jpg', // ← yeh bhi Supabase se daal diya agar available hai
-    pdfUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/pdfs/2025_12_08%209_20%20am%20Office%20Lens_compressed%20(1).pdf',
-    stockStatus: 'read-only',
-  },
-  {
-    id: '8',
-    title: 'मूलज्ञान का दिव्य प्रकाश',
-    author: 'श्री नितिनदास जी साहिब',
-    price: 0,
-    description: 'मूल ज्ञान का दिव्य प्रकाश (केवल पठन हेतु)',
-    coverUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/9facf173580f159d7224bdaf808e8feb21fe238e/covers/moolgyaPrakash.jpg', // ← Supabase se (agar hai toh)
-    pdfUrl: 'https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/pdfs/DOC-20250130-WA0004_compressed%20(1)%20(1).pdf',
-    stockStatus: 'read-only',
-  },
-];
+const supabase = createClient(
+  'https://lqymwrhfirszrakuevqm.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxeW13cmhmaXJzenJha3VldnFtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMjQ4MzEsImV4cCI6MjA4OTkwMDgzMX0.Qlkjm13UTPm6NCwwTTJqAC_cLSoJHPscKYEse6gRYYA'
+);
 
-function BookImageDialog({ book, children }: { book: typeof books[0]; children: React.ReactNode }) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 bg-black/80 backdrop-blur-sm border-white/10">
-        <div className="relative w-full h-[80vh]">
-          <Image src={book.coverUrl} alt={book.title} fill className="object-contain" />
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+interface Book {
+  id: string;
+  title: string;
+  author: string;
+  price: number;
+  description: string;
+  cover_url: string;
+  pdf_url?: string;
+  stock_status: 'in-stock' | 'out-of-stock' | 'read-only';
+  category?: string;
 }
 
 export default function BooksPage() {
-  const handleOrderClick = (book: typeof books[0]) => {
-    // Redirect directly to Google Form with book title pre-filled
-    const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSegbq8uEHe7g3-QZB1qZme4h5uOH-DcwlHbmTx5qJeO-F_8tw/viewform?usp=dialog&entry.123456789=${encodeURIComponent(book.title)}`;
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleOrderClick = () => {
+    const googleFormUrl = `https://docs.google.com/forms/d/e/1FAIpQLSegbq8uEHe7g3-QZB1qZme4h5uOH-DcwlHbmTx5qJeO-F_8tw/viewform`;
     window.open(googleFormUrl, '_blank');
   };
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('books')
+          .select('*');
+
+        if (error) throw error;
+
+        // Custom sorting
+        const orderMap: { [key: string]: number } = {
+          "विदेही ज्ञान": 1,
+          "संतों का सार संदेश": 2,
+          "हर हर गीता": 3,
+        };
+
+        const sortedBooks = [...(data || [])].sort((a, b) => {
+          const orderA = orderMap[a.title] ?? 100;
+          const orderB = orderMap[b.title] ?? 100;
+          return orderA - orderB;
+        });
+
+        setBooks(sortedBooks);
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  // Upcoming Merchandise Section (T-Shirt + Diary)
+  const upcomingMerch = [
+    {
+      title: "नितिनदास जी टी-शर्ट",
+      description: "नितिनदास जी के प्रेरणादायक संदेशों और आध्यात्मिक चित्रण के साथ बनाया गया विशेष टी-शर्ट। उच्च गुणवत्ता वाले कपड़े और आरामदायक फिट।",
+      image: "https://i.ibb.co/hFNq1zd7/t-shirt.png",
+      status: "जल्द आ रहा है"
+    },
+    {
+      title: "आध्यात्मिक डायरी",
+      description: "नितिनदास जी के ज्ञानवर्धक उद्धरणों और आध्यात्मिक प्रेरणा से भरी हुई विशेष डायरी। रोज़ाना लिखने और चिंतन के लिए आदर्श।",
+      image: "https://i.ibb.co/YB8m1tzv/Chat-GPT-Image-Mar-25-2026-12-19-40-PM.png",   // ← Yeh wali image add ki hai
+      status: "जल्द आ रहा है"
+    }
+  ];
+
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-4xl font-bold mb-8 text-center">मूल ज्ञान की पुस्तकें</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">मूल ज्ञान की पुस्तकें</h1>
+
+      {loading && (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
+        </div>
+      )}
+
+      {error && (
+        <Alert variant="destructive" className="mb-8">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {books.map((book) => {
-          const isReadOnly = book.stockStatus === 'read-only' || book.price === 0;
-          const isForSale = !isReadOnly && book.price > 0;
-          const hasPdf = !!book.pdfUrl;
+          const isReadOnly = book.stock_status === 'read-only' || book.price === 0;
 
           return (
-            <Card key={book.id} className="overflow-hidden shadow-lg">
-              <BookImageDialog book={book}>
-                <div className="relative h-64 cursor-pointer">
-                  <Image
-                    src={book.coverUrl}
-                    alt={book.title}
-                    fill
-                    className="object-cover"
-                    unoptimized // Supabase URLs ke liye zaroori (next/image ke caching issue avoid)
-                  />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Expand className="h-10 w-10 text-white" />
-                  </div>
+            <Card key={book.id} className="overflow-hidden shadow-lg bg-zinc-900 border-zinc-800">
+              <div className="relative h-64 cursor-pointer" onClick={() => window.open(book.cover_url, '_blank')}>
+                <Image src={book.cover_url} alt={book.title} fill className="object-cover" unoptimized />
+              </div>
+
+              <div className="p-5">
+                <h2 className="text-xl font-bold text-white line-clamp-2">{book.title}</h2>
+                <p className="text-zinc-400 text-sm mt-1">{book.author}</p>
+
+                <div className="mt-3">
+                  {isReadOnly ? (
+                    <Badge variant="secondary">केवल पढ़ने हेतु</Badge>
+                  ) : (
+                    <span className="text-2xl font-semibold text-amber-500">₹{book.price}</span>
+                  )}
                 </div>
-              </BookImageDialog>
 
-              <div className="p-4">
-                <h2 className="text-xl font-bold">{book.title}</h2>
-                <p className="text-gray-600">{book.author}</p>
-                <p className="text-lg font-semibold mt-2">
-                  {isReadOnly ? <Badge variant="secondary">केवल पढ़ने हेतु</Badge> : `₹${book.price}`}
-                </p>
-                <p className="text-sm text-gray-500 mt-2 line-clamp-2">{book.description}</p>
+                <p className="text-sm text-zinc-500 mt-3 line-clamp-3">{book.description}</p>
 
-                <div className="mt-4 flex gap-2">
-                  {hasPdf && (
-                    <Button asChild variant="outline">
-                      <a href={book.pdfUrl} target="_blank" rel="noopener noreferrer">
-                        <BookOpen className="mr-2 h-4 w-4" />
-                        पढ़ें
+                <div className="mt-5 flex gap-3">
+                  {book.pdf_url && (
+                    <Button asChild variant="outline" className="flex-1">
+                      <a href={book.pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                        <BookOpen className="mr-2 h-4 w-4" /> पढ़ें
                       </a>
                     </Button>
                   )}
-                  {isForSale && (
-                    <Button onClick={() => handleOrderClick(book)}>
-                      <ShoppingCart className="mr-2 h-4 w-4" />
-                      ऑर्डर करें
+                  {!isReadOnly && (
+                    <Button onClick={handleOrderClick} className="flex-1 bg-amber-500 hover:bg-amber-600 text-black">
+                      <ShoppingCart className="mr-2 h-4 w-4" /> ऑर्डर करें
                     </Button>
                   )}
                 </div>
@@ -169,89 +152,43 @@ export default function BooksPage() {
         })}
       </div>
 
-      {/* Merchandise Section */}
-      <div className="mt-16">
-        <h2 className="text-3xl font-bold mb-8 text-center">आगामी मर्चेंडाइज़</h2>
-        <p className="text-center text-gray-600 mb-12">नितिनदास जी के संदेशों के साथ विशेष टी-शर्ट और डायरी</p>
-        
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-2">
-          {/* T-Shirt Merchandise */}
-          <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-            <div className="relative h-64">
-              <Image
-                src="https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/c590461b39a74c9c3d28781874c46901f526147b/image.png"
-                alt="Nitindas Ji T-Shirt"
-                fill
-                className="object-cover"
-                unoptimized
-              />
-              <div className="absolute inset-0 bg-black/40"></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center text-white">
-                  <h3 className="text-2xl font-bold mb-2">नितिनदास जी टी-शर्ट</h3>
-                  <Badge variant="secondary" className="text-lg px-4 py-2 bg-white/90 text-red-600 font-semibold">
-                    जल्द आ रहा है
+      {/* Upcoming Merchandise Section - Updated with Diary Image */}
+      <div className="mt-20">
+        <h2 className="text-3xl font-bold text-center mb-4">आगामी मर्चेंडाइज़</h2>
+        <p className="text-center text-zinc-400 mb-10">नितिनदास जी के संदेशों के साथ विशेष उत्पाद</p>
+
+        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {upcomingMerch.map((item, index) => (
+            <Card key={index} className="bg-zinc-900 border-zinc-800 overflow-hidden shadow-lg hover:shadow-xl transition-all">
+              <div className="relative h-80">
+                <Image 
+                  src={item.image} 
+                  alt={item.title} 
+                  fill 
+                  className="object-cover" 
+                  unoptimized 
+                />
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-white/90 text-red-600 font-semibold px-4 py-1 text-sm">
+                    {item.status}
                   </Badge>
                 </div>
               </div>
-            </div>
-            <div className="p-6">
-              <h4 className="text-xl font-semibold mb-2">विशेष डिज़ाइन टी-शर्ट</h4>
-              <p className="text-gray-600 mb-4">
-                नितिनदास जी के प्रेरणादायक संदेशों और आध्यात्मिक चित्रण के साथ बनाया गया विशेष टी-शर्ट।
-                उच्च गुणवत्ता कपड़े और आरामदायक फिट।
-              </p>
-              <div className="flex gap-4">
-                <Button variant="outline" disabled className="flex-1">
-                  <Shirt className="mr-2 h-4 w-4" />
-                  जल्द उपलब्ध
-                </Button>
-                <Button variant="outline" disabled className="flex-1">
-                  अधिसूचना प्राप्त करें
-                </Button>
+              <div className="p-6">
+                <h3 className="text-2xl font-bold text-white mb-3">{item.title}</h3>
+                <p className="text-zinc-400 leading-relaxed">{item.description}</p>
+                <div className="mt-6 flex gap-3">
+                  <Button variant="outline" disabled className="flex-1 border-zinc-700">
+                    <Shirt className="mr-2 h-4 w-4" />
+                    जल्द उपलब्ध
+                  </Button>
+                  <Button variant="outline" disabled className="flex-1 border-zinc-700">
+                    अधिसूचना प्राप्त करें
+                  </Button>
+                </div>
               </div>
-            </div>
-          </Card>
-
-          {/* Diary Merchandise */}
-          <Card className="overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-            <div className="relative h-64 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center">
-              <Notebook className="h-24 w-24 text-blue-600 opacity-20" />
-              <div className="absolute inset-0 bg-black/20"></div>
-              <div className="relative z-10 text-center">
-                <h3 className="text-2xl font-bold text-white mb-2">आध्यात्मिक डायरी</h3>
-                <Badge variant="secondary" className="text-lg px-4 py-2 bg-white/90 text-blue-600 font-semibold">
-                  जल्द आ रहा है
-                </Badge>
-              </div>
-            </div>
-            <div className="p-6">
-              <h4 className="text-xl font-semibold mb-2">प्रेरणादायक डायरी</h4>
-              <p className="text-gray-600 mb-4">
-                नितिनदास जी के ज्ञानवर्धक उद्धरणों और आध्यात्मिक प्रेरणा से भरी हुई विशेष डायरी।
-                रोज़ाना लिखने और चिंतन के लिए आदर्श।
-              </p>
-              <div className="flex gap-4">
-                <Button variant="outline" disabled className="flex-1">
-                  <Notebook className="mr-2 h-4 w-4" />
-                  जल्द उपलब्ध
-                </Button>
-                <Button variant="outline" disabled className="flex-1">
-                  अधिसूचना प्राप्त करें
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-
-        {/* Join KGF Call to Action */}
-        <div className="mt-12 text-center">
-          <p className="text-gray-600 mb-4">क्या आप नितिनदास जी के संदेशों के साथ जुड़ना चाहते हैं?</p>
-          <Button asChild className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white font-semibold px-8 py-3 rounded-full shadow-lg transform transition-all duration-200 hover:scale-105">
-            <a href="/join" className="flex items-center">
-              KGF में शामिल हों
-            </a>
-          </Button>
+            </Card>
+          ))}
         </div>
       </div>
     </div>

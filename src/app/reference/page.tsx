@@ -2,7 +2,7 @@
 'use client';
 
 import { useCollection } from '@/lib/data-manager';
-import type { ReferenceDocument } from '@/lib/types';
+import type { ReferenceItem } from '@/lib/types';
 import { Loader2, AlertCircle, FileText, Download } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -12,10 +12,10 @@ import Image from 'next/image';
 
 export default function ReferencePage() {
   const { t } = useLocale();
-  const documents = useCollection<ReferenceDocument>('referenceDocuments');
+  const referenceItems = useCollection<ReferenceItem>('referenceItems');
 
-  const sortedDocuments = documents?.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
-  const guruParichayImage = "https://raw.githubusercontent.com/berriescherry8-cell/mool-gyan-assets/main/general-gallery/WhatsApp_Image_2025-12-30_at_8.39.57_AM_(1)_-_Copy.jpeg";
+  const sortedItems = referenceItems?.sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
+  const guruParichayImage = "https://lqymwrhfirszrakuevqm.supabase.co/storage/v1/object/public/moolgyan-media/general-gallery/1774365251330-WhatsApp%20Image%202025-12-30%20at%208.39.57%20AM%20(1)%20-%20Copy.jpeg";
 
   return (
     <div>
@@ -45,27 +45,54 @@ export default function ReferencePage() {
       </Card>
 
 
-      {/* Existing Reference Documents Section */}
-      {sortedDocuments && sortedDocuments.length > 0 ? (
+      {/* Reference Items Section */}
+      {sortedItems && sortedItems.length > 0 ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {sortedDocuments.map((doc) => (
-            <Card key={doc.id} className="flex flex-col">
+          {sortedItems.map((item) => (
+            <Card key={item.id} className="flex flex-col hover:shadow-lg transition-shadow">
+              {item.imageUrl && (
+                <div className="relative h-48">
+                  <Image
+                    src={item.imageUrl}
+                    alt={item.title || 'Reference Image'}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-6 w-6 text-primary" />
-                  {doc.title}
+                  {item.title || 'Untitled'}
                 </CardTitle>
+                {item.description && (
+                  <CardDescription>{item.description}</CardDescription>
+                )}
               </CardHeader>
               <CardContent className="flex-grow">
-                 <p className="text-sm text-muted-foreground">Click the button below to view or download the document.</p>
+                {item.pdfUrl ? (
+                  <p className="text-sm text-muted-foreground">Click the button below to view or download the PDF document.</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No PDF document available for this item.</p>
+                )}
               </CardContent>
-              <CardFooter>
-                <Button asChild className="w-full">
-                  <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
-                    <Download className="mr-2 h-4 w-4" />
-                    Open Document
-                  </a>
-                </Button>
+              <CardFooter className="flex gap-2">
+                {item.pdfUrl && (
+                  <Button asChild className="flex-1">
+                    <a href={item.pdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </a>
+                  </Button>
+                )}
+                {item.imageUrl && (
+                  <Button asChild variant="outline" className={item.pdfUrl ? "flex-1" : "w-full"}>
+                    <a href={item.imageUrl} target="_blank" rel="noopener noreferrer" className="flex items-center">
+                      <FileText className="mr-2 h-4 w-4" />
+                      View Image
+                    </a>
+                  </Button>
+                )}
               </CardFooter>
             </Card>
           ))}
@@ -73,7 +100,7 @@ export default function ReferencePage() {
       ) : (
         <div className="text-center py-16">
           <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-          <h3 className="mt-4 text-2xl font-semibold">No Documents Found</h3>
+          <h3 className="mt-4 text-2xl font-semibold">No Reference Items Found</h3>
           <p className="mt-2 text-muted-foreground">
             Reference materials will be available here soon.
           </p>

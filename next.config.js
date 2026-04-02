@@ -7,6 +7,8 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  unstable_allowDynamicExport: true,
+
   images: {
     remotePatterns: [
       // GitHub RAW content (main data source)
@@ -36,10 +38,11 @@ const nextConfig = {
     unoptimized: true, // Disable image optimization for static export
   },
   // Capacitor configuration
-  output: 'export',
+  // output: 'export', // disabled for dev
   trailingSlash: true,
   distDir: 'dist',
-  assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
+assetPrefix: process.env.NODE_ENV === 'production' ? '/' : '',
+  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
 };
 
 module.exports = nextConfig;
